@@ -86,7 +86,7 @@ DATABASES = {
     }
 }
 
-PRINT_SQL=1
+PRINT_SQL = 0
 
 if os.getenv("PRINT_SQL"):
     LOGGING = {
