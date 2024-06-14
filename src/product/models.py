@@ -2,6 +2,7 @@ from enum import StrEnum
 from django.db import models
 from django.contrib.postgres.search import SearchVectorField
 from django.contrib.postgres.indexes import GinIndex
+from user.models import ServiceUser
 
 
 class ProductStatus(StrEnum):
@@ -42,3 +43,37 @@ class Category(models.Model):
     class Meta:
         app_label = "product"
         db_table = "category"
+
+
+class OrderStatus(StrEnum):
+    PENDING = "pending"
+    PAID = "paid"
+    CANCELLED = "cancelled"
+
+
+class Order(models.Model):
+    user = models.ForeignKey(
+        ServiceUser, on_delete=models.CASCADE, related_name="orders"
+    )
+    total_price = models.PositiveIntegerField()
+    status = models.CharField(max_length=8)  # pending | paid | cancelled
+    products = models.JSONField()
+
+    class Meta:
+        app_label = "product"
+        db_table = "order"
+        indexes = [
+            models.Index(fields=["status"]),
+        ]
+
+
+class OrderLine(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    price = models.PositiveIntegerField()
+    discount_ratio = models.FloatField(default=1)
+
+    class Meta:
+        app_label = "product"
+        db_table = "order_line"
