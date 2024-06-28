@@ -8,6 +8,8 @@ from ninja.security import HttpBearer
 from user.exceptions import NotAuthorizedException, UserNotFoundException
 from user.models import ServiceUser
 
+from django.http import HttpRequest
+
 
 class JWTPayload(TypedDict):
     user_id: int
@@ -57,6 +59,10 @@ class BearerAuth(HttpBearer):
             raise UserNotFoundException
         request.user = user
         return token
+
+
+class AuthRequest(HttpRequest):
+    user: ServiceUser
 
 
 bearer_auth = BearerAuth()

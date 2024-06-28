@@ -57,7 +57,7 @@ class Order(models.Model):
     )
     total_price = models.PositiveIntegerField()
     status = models.CharField(max_length=8)  # pending | paid | cancelled
-    products = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         app_label = "product"

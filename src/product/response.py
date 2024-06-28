@@ -46,3 +46,8 @@ class CategoryListResponse(Schema):
                 CategoryParentResponse.build(category) for category in categories
             ]
         )
+
+
+class OrderDetailResponse(Schema):
+    id: int
+    total_price: int
