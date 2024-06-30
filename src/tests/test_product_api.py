@@ -6,7 +6,7 @@ from schema import Schema
 from user.models import ServiceUser
 from user.authentication import authentication_service
 
-from product.models import OrderLine
+from product.models import OrderLine, Order, OrderStatus
 
 
 @pytest.mark.django_db
@@ -56,3 +56,24 @@ def test_order_products(api_client):
 
     order_id = response.json()["results"]["id"]
     assert OrderLine.objects.filter(order_id=order_id).count() == 2
+
+
+@pytest.mark.django_db
+def test_confirm_order(api_client):
+    user = ServiceUser.objects.create(email="goodpang@example.com")
+    token = authentication_service.encode_token(user_id=user.id)
+
+    order = Order.objects.create(
+        user=user, total_price=1000, status=OrderStatus.PENDING
+    )
+
+    response = api_client.post(
+        f"/products/orders/{order.id}/confirm",
+        data={"payment_key": "payment_key"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert Schema({"results": {"detail": True}}).validate(response.json())
+
+    assert Order.objects.get(id=order.id).status == OrderStatus.PAID

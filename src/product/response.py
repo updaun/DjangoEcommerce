@@ -51,3 +51,7 @@ class CategoryListResponse(Schema):
 class OrderDetailResponse(Schema):
     id: int
     total_price: int
+
+
+class OkResponse(Schema):
+    detail: bool = True

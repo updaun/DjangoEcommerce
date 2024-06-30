@@ -8,3 +8,9 @@ Django를 이용해서 e-commerce를 구현하는 프로젝트입니다.
 - section4: 결제
 - section5: 포인트 시스템
 - section6: ORM 이해하기
+
+
+### DB RUN
+```
+docker-compose -f docker-compose.db.local.yml up
+```
