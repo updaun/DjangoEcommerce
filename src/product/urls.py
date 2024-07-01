@@ -19,6 +19,7 @@ from product.exceptions import (
     OrderInvalidProductException,
     OrderNotFoundException,
     OrderPaymentConfirmFailedException,
+    OrderAlreadyPaidException,
 )
 
 from typing import Dict
@@ -136,6 +137,10 @@ def confirm_order_payment_handler(
     ):
         return 400, error_response(msg=OrderPaymentConfirmFailedException.message)
 
-    order.status = OrderStatus.PAID
-    order.save()
+    if not Order.objects.filter(id=order_id, status=OrderStatus.PENDING).update(
+        status=OrderStatus.PAID
+    ):
+        return 400, error_response(msg=OrderAlreadyPaidException.message)
+
+    # send email
     return 200, response(OkResponse())
