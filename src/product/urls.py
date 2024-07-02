@@ -23,6 +23,8 @@ from product.exceptions import (
 )
 
 from typing import Dict
+from user.models import ServiceUser
+from django.db import models
 
 
 router = Router(tags=["Products"])
@@ -137,10 +139,17 @@ def confirm_order_payment_handler(
     ):
         return 400, error_response(msg=OrderPaymentConfirmFailedException.message)
 
-    if not Order.objects.filter(id=order_id, status=OrderStatus.PENDING).update(
-        status=OrderStatus.PAID
-    ):
-        return 400, error_response(msg=OrderAlreadyPaidException.message)
+    with transaction.atomic():
+        success: int = Order.objects.filter(
+            id=order_id, status=OrderStatus.PENDING
+        ).update(status=OrderStatus.PAID)
+        if not success:
+            return 400, error_response(msg=OrderAlreadyPaidException.message)
+
+        # order count
+        ServiceUser.objects.filter(id=request.user.id).update(
+            order_count=models.F("order_count") + 1
+        )
 
     # send email
     return 200, response(OkResponse())
