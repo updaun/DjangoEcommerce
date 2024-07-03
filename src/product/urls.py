@@ -11,15 +11,14 @@ from shared.response import ErrorResponse
 
 from django.db import transaction
 from product.models import Order, OrderLine, OrderStatus
-from product.request import OrderRequestBody, OrderPaymentConfirmRequestBody
-from product.service import payment_service
+from product.request import OrderRequestBody
 from product.response import OrderDetailResponse, OkResponse
 from shared.response import error_response
 from product.exceptions import (
     OrderInvalidProductException,
     OrderNotFoundException,
-    OrderPaymentConfirmFailedException,
     OrderAlreadyPaidException,
+    UserPointsNotEnoughException,
 )
 
 from typing import Dict
@@ -128,16 +127,14 @@ def order_products_handler(request: AuthRequest, body: OrderRequestBody):
     },
     auth=bearer_auth,
 )
-def confirm_order_payment_handler(
-    request: AuthRequest, order_id: int, body: OrderPaymentConfirmRequestBody
-):
+def confirm_order_payment_handler(request: AuthRequest, order_id: int):
     if not (order := Order.objects.filter(id=order_id, user=request.user).first()):
         return 404, error_response(msg=OrderNotFoundException.message)
 
-    if not payment_service.confirm_payment(
-        payment_key=body.payment_key, amount=order.total_price
-    ):
-        return 400, error_response(msg=OrderPaymentConfirmFailedException.message)
+    # if not payment_service.confirm_payment(
+    #     payment_key=body.payment_key, amount=order.total_price
+    # ):
+    #     return 400, error_response(msg=OrderPaymentConfirmFailedException.message)
 
     with transaction.atomic():
         success: int = Order.objects.filter(
@@ -146,9 +143,14 @@ def confirm_order_payment_handler(
         if not success:
             return 400, error_response(msg=OrderAlreadyPaidException.message)
 
-        # order count
+        user = ServiceUser.objects.select_for_update().get(id=request.user.id)
+        if user.points < order.total_price:
+            return 409, error_response(msg=UserPointsNotEnoughException.message)
+
+        # order count and use points
         ServiceUser.objects.filter(id=request.user.id).update(
-            order_count=models.F("order_count") + 1
+            points=models.F("points") - order.total_price,
+            order_count=models.F("order_count") + 1,
         )
 
     # send email
