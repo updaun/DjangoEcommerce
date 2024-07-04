@@ -19,6 +19,7 @@ from product.exceptions import (
     OrderNotFoundException,
     OrderAlreadyPaidException,
     UserPointsNotEnoughException,
+    UserVersionConflictException,
 )
 
 from typing import Dict
@@ -148,10 +149,21 @@ def confirm_order_payment_handler(request: AuthRequest, order_id: int):
             return 409, error_response(msg=UserPointsNotEnoughException.message)
 
         # order count and use points
-        ServiceUser.objects.filter(id=request.user.id).update(
+        # ServiceUser.objects.filter(id=request.user.id).update(
+        #     points=models.F("points") - order.total_price,
+        #     order_count=models.F("order_count") + 1,
+        # )
+
+        # order count and use points
+        success: int = ServiceUser.objects.filter(
+            id=request.user.id, version=user.version
+        ).update(
             points=models.F("points") - order.total_price,
             order_count=models.F("order_count") + 1,
+            version=user.version + 1,
         )
+        if not success:
+            return 409, error_response(msg=UserVersionConflictException.message)
 
     # send email
     return 200, response(OkResponse())

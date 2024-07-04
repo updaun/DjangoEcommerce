@@ -16,3 +16,7 @@ class OrderAlreadyPaidException(Exception):
 
 class UserPointsNotEnoughException(Exception):
     message = "User points not enough"
+
+
+class UserVersionConflictException(Exception):
+    message = "User version conflict"
