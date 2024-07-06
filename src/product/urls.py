@@ -23,7 +23,7 @@ from product.exceptions import (
 )
 
 from typing import Dict
-from user.models import ServiceUser
+from user.models import ServiceUser, UserPointsHistory
 from django.db import models
 
 
@@ -164,6 +164,12 @@ def confirm_order_payment_handler(request: AuthRequest, order_id: int):
         )
         if not success:
             return 409, error_response(msg=UserVersionConflictException.message)
+
+        UserPointsHistory.objects.create(
+            user=user,
+            points_change=-order.total_price,
+            reason=f"orders:{order.id}:confirm",
+        )
 
     # send email
     return 200, response(OkResponse())

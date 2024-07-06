@@ -3,7 +3,7 @@ import pytest
 from product.models import Product, ProductStatus
 from schema import Schema
 
-from user.models import ServiceUser
+from user.models import ServiceUser, UserPointsHistory
 from user.authentication import authentication_service
 
 from product.models import OrderLine, Order, OrderStatus
@@ -79,3 +79,4 @@ def test_confirm_order(api_client):
     assert Order.objects.get(id=order.id).status == OrderStatus.PAID
     assert ServiceUser.objects.get(id=user.id).order_count == 1
     assert ServiceUser.objects.get(id=user.id).points == 0
+    assert UserPointsHistory.objects.filter(user=user, points_change=-1000).exists()
